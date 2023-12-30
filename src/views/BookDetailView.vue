@@ -1,7 +1,8 @@
 <script setup>
 import { ref, onMounted } from "vue"
 import { ServiceGetBook } from "../api/book"
-import { useRoute } from "vue-router"
+import { ServiceGetComments, ServiceCreateNewComment } from "../api/comment"
+import { useRoute, useRouter } from "vue-router"
 import { ElMessage } from "element-plus"
 import HeaderFill from "../components/HeaderFill.vue"
 import { ServiceAddBookToBookshelf } from "../api/bookshelf"
@@ -9,6 +10,7 @@ import { useUserStore } from "@/stores"
 
 const userStore = useUserStore()
 const route = useRoute()
+const router = useRouter()
 
 const item = ref({})
 const dataLoad = () => {
@@ -16,17 +18,33 @@ const dataLoad = () => {
     bookName: route.params.bookName
   }).then((res) => {
     item.value = res
+  }).finally(() => {
+    commentsLoad()
   })
 }
 
 const rating = ref(5)
 const getBookRating = () => {}
 
+const comments = ref({})
+const commentsLoad = () => {
+  ServiceGetComments({
+    bid: item.value.id
+  }).then((res) => {
+    comments.value = res
+  })
+}
+
 onMounted(() => {
   dataLoad()
 })
 
 const addBook = (bid) => {
+  if (!userStore.id) {
+    router.push("/auth/login")
+    ElMessage({ showClose: true, message: "请先登录", type: "warning" })
+    return
+  }
   ServiceAddBookToBookshelf({
     uid: userStore.id,
     bid: bid
@@ -36,6 +54,28 @@ const addBook = (bid) => {
     } else {
       ElMessage({ showClose: true, message: res.message, type: "warning" })
     }
+  })
+}
+
+const newComment = ref("")
+const handleAddNewComment = () => {
+  if (newComment.value.length == 0) {
+    ElMessage({ showClose: true, message: "请输入留言内容", type: "warning" })
+    return
+  }
+  ServiceCreateNewComment({
+    bid: item.value.id,
+    username: userStore.username,
+    content: newComment.value
+  }).then((res) => {
+    if (res.code == 200) {
+      ElMessage({ showClose: true, message: res.message, type: "success" })
+    } else {
+      ElMessage({ showClose: true, message: res.message, type: "warning" })
+    }
+  }).finally(() => {
+    dataLoad()
+    newComment.value = ""
   })
 }
 </script>
@@ -68,21 +108,21 @@ const addBook = (bid) => {
             </div>
           </div>
           <div class="right flex">
-            <div class="divider"></div>
-            <div class="rate-block">
-              <span class="demonstration">当前评分</span>
+            <div class="rate-block flex">
+              <span class="demonstration">当前评分:</span>
               <el-popover
-              placement="top-start"
-              title="警告"
-              :width="200"
-              trigger="hover"
-              content="评分只能进行一次，请谨慎！"
-            >
-              <template #reference>
-                <el-rate disabled v-model="rating" />
-              </template>
-            </el-popover>
+                placement="top-start"
+                title="警告"
+                :width="200"
+                trigger="hover"
+                content="评分只能进行一次，请谨慎！"
+              >
+                <template #reference>
+                  <el-rate v-model="rating" />
+                </template>
+              </el-popover>
             </div>
+            <div class="divider"></div>
             <div class="auther flex">
               <div class="face">
                 <img src="http://localhost/avatar/默认头像" alt="" />
@@ -97,33 +137,29 @@ const addBook = (bid) => {
       </div>
       <div class="content-body">
         <div class="container">
-          <div class="introduction-header">
-            <h2>作品简介</h2>
+          <div class="introduction">
+            <div class="introduction-header">
+              <h2>作品简介</h2>
+            </div>
+            <div class="introduction-content flex">
+              <p>{{ item.synopsis }}</p>
+            </div>
           </div>
-          <div class="introduction-content flex">
-            <p>{{ item.synopsis }}</p>
+          <div class="comment">
+            <div class="comment-header">
+              <h2>留言板</h2>
+            </div>
+            <div class="comment-content">
+              <div v-for="item in comments.data" :key="item" class="user-comment flex">
+                <span>{{ item.username }} 回复说:</span>
+                <p>{{ item.content }}</p>
+              </div>
+            </div>
+            <div class="comment-action flex">
+              <el-input type="text" v-model="newComment" placeholder="请输入留言内容" />
+              <el-button type="primary" @click="handleAddNewComment()">添加</el-button>
+            </div>
           </div>
-          <!-- <div class="directory-header">
-            <h2>
-              <span>目录</span>
-              <span>/</span>
-              <span>24</span>
-              <span>章节</span>
-            </h2>
-          </div>
-          <div class="directory-content">
-            <ul>
-              <li><span>第一章</span><a href="">桃园三结义</a></li>
-              <li><span>第一章</span><a href="">桃园三结义</a></li>
-              <li><span>第一章</span><a href="">桃园三结义</a></li>
-              <li><span>第一章</span><a href="">桃园三结义</a></li>
-              <li><span>第一章</span><a href="">桃园三结义</a></li>
-              <li><span>第一章</span><a href="">桃园三结义</a></li>
-              <li><span>第一章</span><a href="">桃园三结义</a></li>
-              <li><span>第一章</span><a href="">桃园三结义</a></li>
-              <li><span>第一章</span><a href="">桃园三结义</a></li>
-            </ul>
-          </div> -->
         </div>
       </div>
     </div>
@@ -270,27 +306,29 @@ const addBook = (bid) => {
   content: '\2003\2003';
 }
 
-.content-body .directory-header {
-  height: 40px;
+.rate-block {
+  align-items: center;
 }
-
-.content-body .directory-header h2 {
-  margin: 0 20px;
+.rate-block span {
+  color: #444;
+  padding: 20px;
+}
+.comment h2 {
+  margin: 20px 20px 0 20px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.5);
+  color: #666;
 }
-
-.content-body .directory-content ul {
-  margin: 20px 40px;
-  column-count: 3;
+.comment-content {
+  padding: 0 40px;
 }
-
-.directory-content ul li {
-  font-size: 14px;
-  padding: 5px 0;
+.comment-content span {
+  color: #444;
 }
-
-.directory-content ul a {
-  padding: 0 5px;
-  color: #000;
+.comment-content p {
+  color: #888;
+}
+.comment-action {
+  justify-content: right;
+  padding: 20px;
 }
 </style>

@@ -1,7 +1,7 @@
 <script setup>
 import { useUserStore } from "@/stores"
 import { ref } from "vue"
-import { ServeUpdateUserSetting } from "@/api/user"
+import { ServeUpdateUserSetting, ServeUploadAvatar } from "@/api/user"
 import { ElMessage } from "element-plus"
 
 const userStore = useUserStore()
@@ -24,10 +24,20 @@ const saveChanges = () => {
     } else {
       ElMessage({ showClose: true, message: res.message, type: "warning" })
     }
+  }).finally(() => {
+    isEditing.value = true
+    userStore.loadSetting()
+    location.reload()
   })
-  isEditing.value = true
-  userStore.loadSetting()
-  location.reload()
+}
+
+const a = ref()
+const handleUpLoad = () => {
+  ServeUploadAvatar({
+
+  }).then((res) => {
+
+  })
 }
 </script>
 
@@ -37,6 +47,12 @@ const saveChanges = () => {
       <div class="user-avatar flex">
         <h4>我的头像:</h4>
         <div><img src="http://localhost/avatar/我的头像" alt="" /></div>
+        <div class="upload-avatar">
+          <form>
+            <input type="file" name="img" @change=""/>
+            <button type="submit" @click="handleUpLoad">上传</button>
+          </form>
+        </div>
       </div>
       <div class="user-id flex">
         <h4>用户ID:</h4>
@@ -48,7 +64,7 @@ const saveChanges = () => {
       </div>
       <div class="user-sex flex">
         <h4>性别:</h4>
-        <el-select :disabled="isEditing" v-model="userStore.sex" placeholder="Select">
+        <el-select :disabled="isEditing" v-model="userStore.sex" placeholder="请选择你的性别">
           <el-option value="男" />
           <el-option value="女" />
           <el-option value="秘密" />

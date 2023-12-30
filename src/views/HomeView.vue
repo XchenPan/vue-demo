@@ -16,7 +16,7 @@ const topBookListLoad = () => {
   })
 }
 
-onMounted(async () => {
+onMounted(() => {
   topOneBookLoad()
   topBookListLoad()
 })

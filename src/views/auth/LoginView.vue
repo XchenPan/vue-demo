@@ -44,7 +44,7 @@ const onLogin = () => {
     password: formData.password,
   })
 
-  response.then(async (res) => {
+  response.then((res) => {
     if (res.code == 200) {
       ElMessage({ showClose: true, message: res.message, type: "success" })
       setAccessToken(res.data.token, res.data.expires)
@@ -54,7 +54,6 @@ const onLogin = () => {
       ElMessage({ showClose: true, message: res.message, type: "warning" })
     }
   })
-
   response.finally(() => {
     formData.loading = false
   })
@@ -100,6 +99,7 @@ const onValidate = (event) => {
           :prefix-icon="Lock"
           @keydown.enter="onValidate"
           placeholder="请输入用户密码"
+          type="password"
         />
       </el-form-item>
       <div class="code flex">
@@ -121,7 +121,7 @@ const onValidate = (event) => {
       </div>
       <div class="login-help flex">
         <el-button link>找回密码</el-button>
-        <el-button link>账号注册</el-button>
+        <el-button link><router-link to="/auth/register">账号注册</router-link></el-button>
       </div>
     </el-form>
   </div>

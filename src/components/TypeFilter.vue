@@ -3,7 +3,6 @@ import { ref } from "vue"
 
 const emit = defineEmits(["selecting"])
 
-
 const readerOptions = ["全部", "男生", "女生"]
 const langOptions = ["全部", "中文", "英文"]
 const typeOptions = ["全部", "IT科技", "文学", "哲学", "人文社科", "人物传记"]

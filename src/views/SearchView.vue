@@ -1,12 +1,15 @@
 <script setup>
-import { ElNotification } from "element-plus"
+import { ElMessage } from "element-plus"
 import { useRoute, useRouter } from "vue-router"
 import { ref, onMounted } from "vue"
 import { ServiveGetBookByNameOrAuthor, ServiveGetBookCountByNameOrAuthor } from "../api/book"
 import HeaderFill from "../components/HeaderFill.vue"
+import { useUserStore } from "@/stores"
+import { ServiceAddBookToBookshelf } from "../api/bookshelf"
 
 const route = new useRoute()
 const router = new useRouter()
+const userStore = useUserStore()
 
 const params = ref({
   query: route.query.query || "",
@@ -49,11 +52,21 @@ onMounted(() => {
   dataLoad()
 })
 
-const addBook = () => {
-  ElNotification({
-    title: "Success",
-    message: "加入成功",
-    type: "success"
+const addBook = (bid) => {
+  if (!userStore.id) {
+    router.push("/auth/login")
+    ElMessage({ showClose: true, message: "请先登录", type: "warning" })
+    return
+  }
+  ServiceAddBookToBookshelf({
+    uid: userStore.id,
+    bid: bid
+  }).then((res) => {
+    if (res.code == 200) {
+      ElMessage({ showClose: true, message: res.message, type: "success" })
+    } else {
+      ElMessage({ showClose: true, message: res.message, type: "warning" })
+    }
   })
 }
 </script>
@@ -101,7 +114,7 @@ const addBook = () => {
                 </div>
                 <div class="book-action">
                   <el-button round>立即阅读</el-button>
-                  <el-button type="primary" round @click="addBook">加入书架</el-button>
+                  <el-button type="primary" round @click="addBook(item.id)">加入书架</el-button>
                 </div>
               </div>
             </li>

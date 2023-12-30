@@ -5,7 +5,7 @@ export const ServeGetBookList = (data) => {
 }
 
 export const ServeGetBookListCount = () => {
-    return get("/BookServlet?action=getBookCount")
+    return get("/BookManageServlet?action=getBookCount")
 }
 
 export const ServeUpdateBookData = (data) => {
